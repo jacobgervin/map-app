@@ -1,6 +1,6 @@
 'use client';
-import React from 'react';
-import Map, { Marker, ViewState } from 'react-map-gl';
+import React, {useEffect, useRef} from 'react';
+import Map, { Marker, ViewState, useMap, MapRef, Source, Layer } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapProps {
@@ -11,32 +11,60 @@ interface MapProps {
 }
 
 const LocationMap: React.FC<MapProps> = ({ location }) => {
+    const {current: map} = useMap();
+    const mapRef = useRef<MapRef>(null);
     const PaddingOptions = {
-        top: 50,    // 50px padding on top
-        bottom: 50, // 50px padding on bottom
-        left: 50,   // 50px padding on left
-        right: 50,  // 50px padding on right
+        top: 0,
+        bottom: 0,
+        left: 0,  
+        right: 0, 
       };
 
   const [viewport, setViewport] = React.useState<ViewState>({
     longitude: location.long,
     latitude: location.lat,
-    zoom: 12,
-    bearing: 2,
-    pitch: 1,
+    zoom: 16,
+    bearing: 0,
+    pitch: 30,
     padding: PaddingOptions
   });
-
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [location.long, location.lat],
+        essential: true,
+      });
+    }
+  }, [location]);
   return (
+    <div className='h-full md:h-screen w-full p-1 border-box'>
     <Map
+      ref={mapRef}
       initialViewState={viewport}
-      style={{ width: 600, height: 400 }}
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
+      style={{ borderRadius: "8px", height: "100%", width: "100%"}}
+      mapboxAccessToken="pk.eyJ1IjoiamFjb2JnZXJ2aW4iLCJhIjoiY2x6bWQyb2k1MDhodjJrczh2aGI3cWtsMCJ9.cBMDgUQ5BNx1ZWE_WP5glQ"
       mapStyle="mapbox://styles/mapbox/dark-v11"
       onMove={(evt) => setViewport(evt.viewState)}
     >
-      <Marker longitude={location.long} latitude={location.lat} color="red" />
+      <Source id="mapbox-dem" type="raster-dem" url="mapbox://mapbox.mapbox-terrain-dem-v1" tileSize={512} maxzoom={14} />
+        <Layer id="terrain" type="hillshade" source="mapbox-dem" />
+        
+        <Layer
+          id="3d-buildings"
+          type="fill-extrusion"
+          source="composite"
+          source-layer="building"
+          minzoom={15}
+          paint={{
+            'fill-extrusion-color': '#292929',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.6
+          }}
+        />
+      <Marker longitude={location.long} latitude={location.lat} color="#382bf0" />
     </Map>
+    </div>
   );
 };
 

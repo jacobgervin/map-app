@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/mapbox-gl": "^3.4.0",
     "dotenv": "^16.4.5",
     "mapbox-gl": "^3.5.2",
     "next": "14.2.5",
